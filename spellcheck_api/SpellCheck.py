@@ -13,6 +13,7 @@ import pickle
 import time
 import logging
 import json
+import re
 
 # Importing Vietnamese NLP toolkits
 # from vncorenlp import VnCoreNLP
@@ -55,6 +56,37 @@ def splitTextBySentences(text):
   labels = [[0 for i in range(len(sentence.split()))] for sentence in text2sentences]
   return text2sentences, labels
 
+def splitTextByParagraph(text, max_len=MAX_LEN):
+  # annotator = VnCoreNLP(address="http://127.0.0.1", port=9000) 
+  pattern = ">>.+>>" # remove hyperlinks between ">>"
+
+  # split by max len (default 200)
+  sub_paragraphs = []
+  sub_paragraphs.append('')
+  j = 0
+  # print(len(sub_paragraphs[j].split()))
+
+  sentences = sent_tokenize(text) # sentence tokenize
+  for i in range(len(sentences)):
+      # print(i)
+      sentences[i] = re.sub(pattern,"",sentences[i])
+      sentences[i] = sentences[i].replace(".. ",". ")
+      sentences[i] = re.sub(r'([?!,.]+)',r' \1 ', sentences[i])
+      sentences[i] = word_tokenize(sentences[i])
+      sentences[i] = ' '.join(sentences[i])
+      # print(sentences[i])
+      # print(len(sub_paragraphs[j].split()))
+
+      # if current sub_paragraph has len < MAX_LEN, concat new sentence
+      if len(sub_paragraphs[j].split()) + len(sentences[i].split()) < MAX_LEN:
+          sub_paragraphs[j] = sub_paragraphs[j] + ' ' + sentences[i]
+          
+      else:
+          j = j + 1
+          sub_paragraphs.append('')
+  labels = [[0 for i in range(len(sentence.split()))] for sentence in sub_paragraphs]
+  return sub_paragraphs, labels
+
 def splitTextByMaxLen(text, max_len=MAX_LEN):
   # split text by MAX_LEN/2
   text_array = text.split()
@@ -74,9 +106,16 @@ def splitTextByMaxLen(text, max_len=MAX_LEN):
   return text_chunked, label_chunked
 
 def spellCheck(text):  
+  
   # split text to batches of (sub_text, labels)
   # text_array, label_array = splitTextByMaxLen(text, MAX_LEN)
-  text_array, label_array = splitTextBySentences(text)
+  text_array, label_array = splitTextByParagraph(text, MAX_LEN)
+  # print(text_array)
+  # print(label_array)
+  # exit()
+  # text_array, label_array = splitTextBySentences(text)
+  original_text = ''.join(text_array)
+  logging.info(text_array)
   # logging.info('Chunk: {}'.format(text_array))
   # create dataset & dataloader for prediction
   test_set = CustomDataset(tokenizer, text_array, label_array, MAX_LEN)
@@ -92,6 +131,7 @@ def spellCheck(text):
   logging.info("Begin check spelling")
   predict_text, predict_mispell = '', []
   for chunk, data in enumerate(test_loader):    
+    start_time_chunk = time.time()
     # logging.info("Chunk No. {}".format(chunk))
     # logging.info("Predict Text: {}".format(predict_text))
 
@@ -99,18 +139,28 @@ def spellCheck(text):
     for token in ids:
       # logging.info('Token: {}, decode: {}'.format(token, tokenizer.decode(token)))
       predict_text_chunk = tokenizer.decode(token)
-
+    # logging.info(predict_text_chunk)
     mask = data['mask'].to(device, dtype = torch.long)
     targets = data['tags'].to(device, dtype = torch.long)
 
     output = new_model(ids, mask, labels=targets)
     loss, logits = output[:2]
-    logits = logits.detach().cpu().numpy()
+    smax_tensor = torch.nn.functional.softmax(logits, dim=2)
+    # logging.info(logits)
+    # logging.info(smax_tensor)
+    # exit()
+    smax_np = smax_tensor.detach().numpy()
+    # prob_np = np.max(smax_np, axis=2)
+    # logging.info(prob_np.shape)
+    # logging.info(prob_np)
+    logits_np = logits.detach().cpu().numpy()
+    
     # predictions.extend([list(p) for p in np.argmax(logits, axis=2)])
 
     # prediction
-    pred = [list(p) for p in np.argmax(logits, axis=2)]
-    logging.info(pred)
+    pred = [list(p) for p in np.argmax(logits_np, axis=2)]
+    # logging.info(len(pred[0]))
+    # logging.info(pred)
     # extract text chunks
     # for id in ids:
     #   predict_text_chunk = tokenizer.decode(id)
@@ -120,7 +170,9 @@ def spellCheck(text):
     predict_text_chunk_removed_pad = predict_text_chunk_removed_pad.replace('<s>', '')
     predict_text_chunk_removed_pad = predict_text_chunk_removed_pad.replace('</s>', '')
     predict_text_chunk_removed_pad = predict_text_chunk_removed_pad.rstrip()
+    logging.info('Text len: {}'.format(len(predict_text_chunk_removed_pad.split())))
     logging.info('Text chunk: {}'.format(predict_text_chunk_removed_pad))
+    logging.info('Predict time: %s seconds ---' % (time.time() - start_time_chunk))
     predict_text = predict_text + predict_text_chunk_removed_pad
   
     # combine predictions among chunks
@@ -185,7 +237,7 @@ def result():
     text_token = list(sp_text.split())
     # text_token = word_tokenize(sp_text)
     # logging.info("Spell Check results: %s" % sp_check)
-    logging.info("--- %s seconds ---" % (time.time() - start_time))
+    logging.info("Total time: --- %s seconds ---" % (time.time() - start_time))
 
     return render_template("spellcheck_result.html", text = text, text_token = text_token, sp_check = sp_check, base_url = home_url)
 
