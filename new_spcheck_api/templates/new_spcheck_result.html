@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+   <head>
+      <title>SpellCheck Result</title>
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+   </head>
+   <body>
+      <div class="container">
+         <h1>Baomoi SpellChecker</h1>
+         <table class="table table-stripped table-bordered">
+            <tr>
+               <td>Original text</td>
+               <td>{{original_text}}</td>
+            </tr>
+            <tr>
+               <td>Typos</td>
+               <td>
+                  {{mistakes}}
+               </td>
+            </tr>
+            <tr>
+               <td>Suggest</td>
+               <td>
+                  {{suggested_text}}
+               </td>
+            </tr>
+         </table>
+         <a href="{{base_url}}" class="button">Back</a>
+      </div>
+   </body>
+</html>

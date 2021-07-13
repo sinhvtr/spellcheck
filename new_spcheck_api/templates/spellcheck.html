@@ -1,0 +1,21 @@
+<html>
+    <head>
+        <title>Bao moi Spell Checker</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Kiểm tra chính tả tiếng việt</h1>
+
+            <form action = "{{ url }}spellcheck_result" method = "POST">
+                <div class="form-group">
+                    <label for="article_text">Đoạn văn cần kiểm tra chính tả</label>
+                    <textarea class="form-control" aria-label="With textarea" name="article_text"></textarea>
+                </div>
+                <input type = "submit" value = "Submit" class="btn btn-primary" />
+            </form>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,91 @@
+<html>
+    <head>
+        <title>Bao moi Spell Checker</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    </head>
+    <body>
+        <div id="wrapper">
+            <div id="page-wrapper">
+                <div id="main-content" class="row col-lg-12" >
+                    <div class="col-lg-12">
+                        <h1>Kiểm tra chính tả Baomoi</h1>
+
+                        <form style="text-align: left;">
+                            <div class="form-group">
+                                <label for="input_text">Đoạn text cần kiểm tra chính tả</label>
+                                <textarea class="form-control" aria-label="With textarea" name="input_text" id="input_text" rows="10"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <button id="btnCheckSpelling" class="btn btn-primary" type="button">
+                                    <span class="glyphicon glyphicon-search spanFind" aria-hidden="true"></span> Kiểm tra
+                                    <span class="spanFinding" style="display: none">
+                                    <image src="https://stc-ki-ki-qa.zdn.vn/static/dist/images/searching.gif" style="width: 32px"/>
+                                    </span>
+                                </button>
+                            </div>
+                        </form>
+                        <div class="panel panel-default">
+                            <div class="panel-heading">Kết quả kiểm tra <span id="spanErrorCount"></span></div>
+                            <div class="panel-body" id="divCheckResult"></div>
+                        </div>
+                    
+                        <div class="panel panel-default">
+                            <div class="panel-heading">Kết quả gợi ý</div>
+                            <div class="panel-body" id="divSugesstedResult"></div>
+                            <div class="panel-body panel-footer text-right" id="divModelInfo"></div>
+                    
+                        </div>
+
+                        <script type="text/javascript">
+                            $.ajaxSetup({
+                                headers: { "X-CSRFToken": 'LHagQ5l2Tu5DlRasFaL9Cu3Zk6KTVJl7Xbwem5vlLmNtirMB8vM0SDw0wabAtVrJ' }
+                            });
+                    
+                            $(document).ready(function() {
+                                let check_spelling = function (e) {
+                                    let sent_data = {
+                                        "text": $("#input_text").val()
+                                    };
+                                    $(".spanFinding").show();
+                                    $.ajax({
+                                        url: '/spcheck_result/',
+                                        type: 'post',
+                                        data: sent_data,
+                                        cache: false,
+                                        success: function (response) {
+                                            $("#divCheckResult").empty();
+                                            $("#divSugesstedResult").empty();
+                                            $("#spanErrorCount").empty();
+                                            $("#divModelInfo").empty();
+                                            let error_count = 0;
+                                            response["result"].forEach(function (item, index) {
+                                                $("#divCheckResult").append(`<p>${item["html"]}</p>`);
+                                                error_count += item["error_count"]
+                                            });
+                    
+                                            response["result"].forEach(function (item, index) {
+                                                $("#divSugesstedResult").append(`<p>${item["html_suggested"]}</p>`);
+                                            });
+                    
+                                            $(".spanFinding").hide();
+                                            $("#spanErrorCount").html(`: Tìm thấy <code>${error_count}</code> lỗi`);
+                                            $("#divModelInfo").html(`Corrector: <code>${response["version"]}</code>`)
+                                        },
+                                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                                        console.log(errorThrown);
+                                    });
+                                };                                                    
+                    
+                                $("#btnCheckSpelling").click(check_spelling);                                
+                            });
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </div>        
+    </body>
+</html>

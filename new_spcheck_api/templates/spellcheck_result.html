@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+   <head>
+      <title>SpellCheck Result</title>
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+   </head>
+   <body>
+      <div class="container">
+         <h1>Kiểm tra chính tả tiếng việt</h1>
+         <table class="table table-stripped table-bordered">
+            <tr>
+               <td>Sentence</td>
+               <td>{{text_token}}</td>
+            </tr>
+            <tr>
+               <td>Typos</td>
+               <td>
+                  {% for typo in sp_check %} 
+                       
+                     {% if typo != "C" %}
+                     <b style="color: red;">{{text_token[loop.index-1]}}</b>
+                     {% else %}
+                     {{text_token[loop.index-1]}}
+                     {% endif %}
+                  {% endfor %}
+               </td>
+            </tr>
+         </table>
+         <a href="{{base_url}}" class="button">Back</a>
+      </div>
+   </body>
+</html>
