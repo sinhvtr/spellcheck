@@ -5,16 +5,9 @@ import logging
 import json
 import requests
 import re
+from datetime import datetime
 
-from underthesea import sent_tokenize, word_tokenize
-
-# import os
-
-# proxy = 'http://10.60.28.99:81'
-# os.environ['http_proxy'] = proxy 
-# os.environ['HTTP_PROXY'] = proxy
-# os.environ['https_proxy'] = proxy
-# os.environ['HTTPS_PROXY'] = proxy
+from underthesea import sent_tokenize, word_tokenize, ner
 
 url = "https://nlp.laban.vn/wiki/spelling_checker_api/"
 proxies = {"http": "http://10.30.11.17:8081"}
@@ -26,10 +19,19 @@ logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:
                     datefmt='%Y-%m-%d:%H:%M:%S',
                     level=logging.INFO)
 
+# split text and return tokens along with their offset position in text
 def split_span(s):
     for match in re.finditer(r"\S+", s):
         span = match.span()
         yield match.group(0), span[0], span[1] - 1
+
+def get_ner(text):
+    ner_analyzing = ner(text)
+    name_entities = []
+    for token in ner_analyzing:
+        if token[3] != 'O':
+            name_entities.append(token[0])
+    return name_entities
 
 def get_spcheck(text):
     payload={'text': text,
@@ -103,7 +105,12 @@ def spcheck_result():
 def api_plain_result():
     start_time = time.time()
 
-    if request.method == 'POST':
+    logging.info('System time: {}'.format(datetime.fromtimestamp(start_time)))
+
+    all_tokens = []
+    mistake_count = 0
+
+    if request.method in ['POST', 'GET']:
         input_text = request.get_data()
         input_text = input_text.decode("utf8")
         # logging.info('Input: {}'.format(input_text))
@@ -113,8 +120,8 @@ def api_plain_result():
         # for paragraph in sp_check:
         #     logging.info("Typos: %s " % paragraph)    
         
-        all_tokens = []
-        mistake_count = 0
+        
+        
         for paragraph in sp_check:
             para_tokens = split_span(paragraph['text'])
             mistake_count = mistake_count + len(paragraph['mistakes'])
